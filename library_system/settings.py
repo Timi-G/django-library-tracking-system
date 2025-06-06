@@ -24,6 +24,8 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'corsheaders',
+    'django_celery_beat',
+    'django_celery_results',
     # Local apps
     'library', 
 ]
