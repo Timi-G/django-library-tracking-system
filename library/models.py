@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+
 from datetime import timedelta
 
 class Author(models.Model):
@@ -36,24 +38,18 @@ class Member(models.Model):
     def __str__(self):
         return self.user.username
 
+    
+def default_due_date():
+        return timezone.now().date()+timedelta(days=14)
+
 class Loan(models.Model):
     book = models.ForeignKey(Book, related_name='loans', on_delete=models.CASCADE)
     member = models.ForeignKey(Member, related_name='loans', on_delete=models.CASCADE)
     loan_date = models.DateField(auto_now_add=True)
     return_date = models.DateField(null=True, blank=True)
     is_returned = models.BooleanField(default=False)
-    due_date = models.DateField(null=True, blank=True)
+    due_date = models.DateField(default=default_due_date)
 
     def __str__(self):
         return f"{self.book.title} loaned to {self.member.user.username}"
-    
-    def add_due_date(loan_date):
-        return loan_date+timedelta(days=14)
-
-    def clean(self):
-        self.add_due_date(self.loan_date)
-
-    def save(self, **kwargs):
-        self.clean()
-        return super().save(**kwargs)
     

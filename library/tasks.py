@@ -28,9 +28,17 @@ def send_loan_notification(loan_id):
 @shared_task
 def check_overdue_loans():
     try:
-        loans=Loan.objects.all()
-        for loan in loans:
-            if loan.is_returned and timezone.now().date() > loan.due_date:
-                send_loan_notification.delay(loan.id)
-    except:
-        pass
+        today= timezone().now().date()
+        overdue_loans= Loan.object.filter(is_returned=False, due_date__lt=today)
+        for loan in overdue_loans:
+            member=loan.member.user
+            send_mail(
+                subject="Overdue Book Notification",
+                message=f"Hello {member.username}\n\nYour loaned book '{loan.book.title}' is overdue since {loan.due_date}\nPlease return as soon as possible",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[member.email],
+                fail_silently=False,
+            )
+            logger.info(f'Notification sent to {member.username} to overdue loan of book {loan.book.title}')
+    except Loan.DoesNotExist:
+        logger.warning('Loan object does not exist')
