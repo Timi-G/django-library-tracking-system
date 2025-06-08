@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from .models import Author, Book, Member, Loan
 from .serializers import AuthorSerializer, BookSerializer, MemberSerializer, LoanSerializer
 from rest_framework.decorators import action
+from django.db.models import Count, Q
 from django.utils import timezone
 from .tasks import send_loan_notification
 
@@ -51,21 +52,21 @@ class MemberViewSet(viewsets.ModelViewSet):
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
 
-    @action(detail=True, methods=['post'], url_path='top-active')
+    @action(detail=False, methods=['get'], url_path='top-active')
     def top_active(self, request):
         top_members = (
             Member.objects
-            .annotate(active_loan_count=Count('loan', filter=Q(loan__is_returned=False)))
+            .annotate(active_loan_count=Count('loans', filter=Q(loans__is_returned=False)))
             .filter(active_loan_count__gt=0)
-            .order_by('-active_loan_count')[:5]
             .select_related('user')
+            .order_by('-active_loan_count')[:5]
         )
 
         data = [
             {
             'id': member.id,
             'username': member.user.username,
-            'active_loans': member.active_loans
+            'active_loans': member.active_loan_count
             }
             for member in top_members
         ]

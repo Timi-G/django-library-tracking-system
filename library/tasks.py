@@ -3,7 +3,7 @@ from .models import Loan
 from django.core.mail import send_mail
 from django.conf import settings
 
-from datetime import timezone
+from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,8 +28,8 @@ def send_loan_notification(loan_id):
 @shared_task
 def check_overdue_loans():
     try:
-        today= timezone().now().date()
-        overdue_loans= Loan.object.filter(is_returned=False, due_date__lt=today)
+        today= timezone.now().date()
+        overdue_loans= Loan.objects.filter(is_returned=False, due_date__lt=today)
         for loan in overdue_loans:
             member=loan.member.user
             send_mail(
@@ -39,6 +39,6 @@ def check_overdue_loans():
                 recipient_list=[member.email],
                 fail_silently=False,
             )
-            logger.info(f'Notification sent to {member.username} to overdue loan of book {loan.book.title}')
+            logger.info(f'Notification sent to {member.username} for overdue loan of book {loan.book.title}')
     except Loan.DoesNotExist:
         logger.warning('Loan object does not exist')
